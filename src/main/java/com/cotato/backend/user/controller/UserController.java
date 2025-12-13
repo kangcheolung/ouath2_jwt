@@ -1,7 +1,5 @@
 package com.cotato.backend.user.controller;
 
-
-
 import com.cotato.backend.common.dto.DataResponse;
 import com.cotato.backend.domain.user.entity.CustomOAuth2User;
 import com.cotato.backend.user.dto.UserInfoResponse;
