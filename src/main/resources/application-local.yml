@@ -1,0 +1,50 @@
+spring:
+  # H2 Database
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create  # 로컬에서는 매번 새로 생성
+    show-sql: true
+
+  # Redis (로컬 - Docker Compose)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # OAuth2 Redirect URI (로컬)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: http://localhost:8080/login/oauth2/code/google
+          naver:
+            redirect-uri: http://localhost:8080/login/oauth2/code/naver
+          kakao:
+            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+
+server:
+  port: 8080
+
+# 로깅 (상세)
+logging:
+  level:
+    com.cotato.backend: debug
+    org.springframework.security: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
+
+# CORS (로컬)
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:5173

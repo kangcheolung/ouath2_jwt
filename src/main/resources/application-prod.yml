@@ -1,0 +1,62 @@
+spring:
+  # MySQL Database
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:jwtbackend}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 운영에서는 검증만
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # Redis (운영)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # OAuth2 Redirect URI (운영)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: ${FRONTEND_URL}/login/oauth2/code/google
+          naver:
+            redirect-uri: ${FRONTEND_URL}/login/oauth2/code/naver
+          kakao:
+            redirect-uri: ${FRONTEND_URL}/login/oauth2/code/kakao
+
+server:
+  port: 8080
+  shutdown: graceful
+
+# 로깅 (최소)
+logging:
+  level:
+    com.cotato.backend: info
+    org.springframework: warn
+    org.hibernate: warn
+
+# CORS (운영)
+cors:
+  allowed-origins: ${FRONTEND_URL}
