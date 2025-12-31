@@ -8,6 +8,7 @@ import java.util.function.Function;
 
 @RequiredArgsConstructor
 public enum OAuth2Extractor {
+    // 각 제공자별로 추출 함수를 매핑
     GOOGLE(OAuth2Provider.GOOGLE, OAuth2Extractor::extractGoogleProfile),
     NAVER(OAuth2Provider.NAVER, OAuth2Extractor::extractNaverProfile),
     KAKAO(OAuth2Provider.KAKAO, OAuth2Extractor::extractKakaoProfile);
@@ -15,6 +16,7 @@ public enum OAuth2Extractor {
     private final OAuth2Provider provider;
     private final Function<Map<String, Object>, OAuth2Profile> extractor;
 
+    // 제공자에 맞는 추출 로직 실행
     public static OAuth2Profile extract(OAuth2Provider provider, Map<String, Object> attributes) {
         return Arrays.stream(values())
                 .filter(extractor -> extractor.provider == provider)

@@ -13,6 +13,7 @@ public class OAuth2Profile {
     private String email;
     private String provider;
 
+    // OAuth2Profile → User 엔티티로 변환
     public User toUser() {
         return User.builder()
                 .name(name)

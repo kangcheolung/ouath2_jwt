@@ -25,6 +25,11 @@ public class OAuthService implements OAuth2UserService<OAuth2UserRequest, OAuth2
     private final DefaultOAuth2UserService defaultOAuth2UserService;
     private final OAuth2UserFactory oAuth2UserFactory;
 
+    /**
+     * OAuth2 로그인 시 호출되는 메인 메서드
+     * Spring Security가 자동으로 호출함
+     */
+
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
