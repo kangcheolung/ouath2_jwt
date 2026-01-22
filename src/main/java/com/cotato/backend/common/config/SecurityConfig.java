@@ -87,6 +87,7 @@ public class SecurityConfig {
             "http://localhost:3000",
             "http://localhost:3001",
             "http://localhost:8080"
+            // 배포시 도메인 추가
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
