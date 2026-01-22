@@ -33,78 +33,75 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF 비활성화 (JWT 사용 시)
-                .csrf(AbstractHttpConfigurer::disable)
+            .csrf(AbstractHttpConfigurer::disable)
 
-                // 요청 권한 설정
-                .authorizeHttpRequests(authorize -> authorize
-                        // 공개 엔드포인트
-                        .requestMatchers("/", "/h2-console/**", "/login/**", "/oauth2/**").permitAll()
-                        // 인증 필요 엔드포인트
-                        .requestMatchers("/api/users/**").authenticated()
-                        .anyRequest().authenticated()
-                )
+            .authorizeHttpRequests(authorize -> authorize
+                // 공개 엔드포인트
+                .requestMatchers("/", "/h2-console/**", "/login/**", "/oauth2/**", "/callback.html").permitAll()
 
-                // H2 Console frameOptions 비활성화
-                .headers(headers -> headers
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                // Swagger 경로 허용
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
-                // 로그아웃 설정
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/")
-                        .invalidateHttpSession(true)
-                        .clearAuthentication(true)
-                )
+                // 인증 API
+                .requestMatchers("/api/auth/**").permitAll()
 
-                // OAuth2 로그인 설정
-                .oauth2Login(oauth2Login -> oauth2Login
-                        .successHandler(oAuth2AuthenticationSuccessHandler)
-                        .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
-                                .userService(oAuthService))
-                )
+                // 사용자 API (인증 필요)
+                .requestMatchers("/api/users/**").authenticated()
 
-                // 세션 사용 안 함 (STATELESS) - JWT 사용
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .anyRequest().authenticated()
+            )
 
-                // CORS 설정
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .headers(headers -> headers
+                .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
 
-                // JWT 필터 추가
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .logout(logout -> logout
+                .logoutSuccessUrl("/")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+            )
+
+            .oauth2Login(oauth2Login -> oauth2Login
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
+                    .userService(oAuthService))
+            )
+
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+            .formLogin(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // CORS 설정
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 허용할 Origin (프론트엔드 주소)
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "http://localhost:3001"
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:8080"
         ));
 
-        // 허용할 HTTP 메서드
         configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
 
-        // 허용할 헤더
         configuration.setAllowedHeaders(List.of("*"));
 
-        // 인증 정보 포함 허용
         configuration.setAllowCredentials(true);
 
-        // 노출할 헤더 (JWT 토큰 등)
         configuration.setExposedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type"
+            "Authorization",
+            "Content-Type"
         ));
 
-        // preflight 요청 캐시 시간 (1시간)
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
