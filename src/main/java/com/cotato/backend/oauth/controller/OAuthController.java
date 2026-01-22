@@ -29,7 +29,6 @@ public class OAuthController {
     // 인증된 현재 사용자 정보 조회
     @GetMapping("/me")
     @Operation(summary = "현재 사용자 정보 조회")
-    @SecurityRequirement(name = "accessTokenAuth")
     public ResponseEntity<DataResponse<UserInfoResponse>> getCurrentUser(
         @Parameter(hidden = true) @AuthenticationPrincipal User user) {
 

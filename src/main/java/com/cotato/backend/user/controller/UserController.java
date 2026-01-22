@@ -26,7 +26,6 @@ public class UserController {
 
     @GetMapping("/me")
     @Operation(summary = "내 정보 조회")
-    @SecurityRequirement(name = "accessTokenAuth")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<DataResponse<UserInfoResponse>> getMe(
         @Parameter(hidden = true) @AuthenticationPrincipal User user) {
