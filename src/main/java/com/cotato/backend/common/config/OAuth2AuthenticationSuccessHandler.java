@@ -18,13 +18,17 @@ import java.io.IOException;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final String frontendUrl;
 
-    @Value("${spring.profiles.active:local}")
-    private String activeProfile;
+    public OAuth2AuthenticationSuccessHandler(
+            JwtTokenProvider jwtTokenProvider,
+            @Value("${app.frontend-url:http://localhost:3000}") String frontendUrl) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.frontendUrl = frontendUrl;
+    }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -38,14 +42,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
         log.info("OAuth2 로그인 성공 - User ID: {}, Email: {}", user.getId(), user.getEmail());
-
-        // 프로필에 따라 리다이렉트 URL 결정
-        String frontendUrl;
-        if ("prod".equals(activeProfile)) {
-            frontendUrl = "https://your-frontend.com";  // 배포 시 실제 프론트엔드 URL로 변경
-        } else {
-            frontendUrl = "http://localhost:3000";
-        }
 
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl)
             .queryParam("accessToken", accessToken)

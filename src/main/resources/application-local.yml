@@ -31,6 +31,10 @@ spring:
           kakao:
             redirect-uri: http://localhost:8080/login/oauth2/code/kakao
 
+# App 설정 (로컬)
+app:
+  frontend-url: http://localhost:3000
+
 # 로깅 (상세)
 logging:
   level:

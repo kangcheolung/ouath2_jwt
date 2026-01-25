@@ -34,19 +34,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
-                User user = userRepository.findById(userId).orElse(null);
+            if (StringUtils.hasText(jwt)) {
+                if (jwtTokenProvider.validateToken(jwt)) {
+                    // Access Token인지 확인
+                    if (jwtTokenProvider.isAccessToken(jwt)) {
+                        Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
+                        User user = userRepository.findById(userId).orElse(null);
 
-                if (user != null) {
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    user,
-                                    null,
-                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
-                            );
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                        if (user != null) {
+                            UsernamePasswordAuthenticationToken authentication =
+                                    new UsernamePasswordAuthenticationToken(
+                                            user,
+                                            null,
+                                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                                    );
+                            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(authentication);
+                        }
+                    } else {
+                        log.debug("Access Token이 아닌 토큰으로 인증 시도: {}", request.getRequestURI());
+                    }
+                } else {
+                    log.debug("유효하지 않은 JWT 토큰: {}", request.getRequestURI());
                 }
             }
         } catch (Exception ex) {

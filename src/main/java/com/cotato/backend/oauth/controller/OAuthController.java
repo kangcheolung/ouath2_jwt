@@ -1,6 +1,8 @@
 package com.cotato.backend.oauth.controller;
 
 import com.cotato.backend.common.dto.DataResponse;
+import com.cotato.backend.common.exception.AppException;
+import com.cotato.backend.common.exception.ErrorCode;
 import com.cotato.backend.common.jwt.JwtTokenProvider;
 import com.cotato.backend.domain.user.entity.User;
 import com.cotato.backend.domain.user.repository.UserRepository;
@@ -29,29 +31,40 @@ public class OAuthController {
     // 인증된 현재 사용자 정보 조회
     @GetMapping("/me")
     @Operation(summary = "현재 사용자 정보 조회")
+    @SecurityRequirement(name = "accessTokenAuth")
     public ResponseEntity<DataResponse<UserInfoResponse>> getCurrentUser(
         @Parameter(hidden = true) @AuthenticationPrincipal User user) {
 
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
         UserInfoResponse userInfo = UserInfoResponse.from(user);
         return ResponseEntity.ok(DataResponse.from(userInfo));
     }
 
     // Token 갱신
     @PostMapping("/refresh")
-    @Operation(summary = "토큰 갱신")
-    @SecurityRequirement(name = "accessTokenAuth")
+    @Operation(summary = "토큰 갱신", description = "Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급받습니다.")
     public ResponseEntity<DataResponse<TokenResponse>> refresh(
         @RequestHeader("Authorization") String refreshToken) {
 
         String token = refreshToken.replace("Bearer ", "");
 
+        // 토큰 유효성 검증
         if (!jwtTokenProvider.validateToken(token)) {
+            log.warn("유효하지 않은 Refresh Token으로 갱신 시도");
+            return ResponseEntity.status(401).build();
+        }
+
+        // Refresh Token 타입인지 확인
+        if (!jwtTokenProvider.isRefreshToken(token)) {
+            log.warn("Refresh Token이 아닌 토큰으로 갱신 시도");
             return ResponseEntity.status(401).build();
         }
 
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());

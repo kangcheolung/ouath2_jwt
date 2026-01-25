@@ -67,6 +67,10 @@ jwt:
 server:
   port: 8080
 
+# App 설정
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
 # 로깅 기본 설정
 logging:
   pattern:

@@ -38,6 +38,10 @@ spring:
           kakao:
             redirect-uri: ${BACKEND_URL}/login/oauth2/code/kakao
 
+# App 설정 (운영)
+app:
+  frontend-url: ${FRONTEND_URL}
+
 # 로깅 (최소)
 logging:
   level:

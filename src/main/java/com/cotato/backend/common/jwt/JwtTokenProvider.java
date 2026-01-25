@@ -74,21 +74,41 @@ public class JwtTokenProvider {
             getClaims(token);
             return true;
         } catch (ExpiredJwtException e) {
-            log.error("만료된 JWT 토큰입니다.");
-            throw e;
+            log.warn("만료된 JWT 토큰입니다.");
+            return false;
         } catch (UnsupportedJwtException e) {
-            log.error("지원되지 않는 JWT 토큰입니다.");
-            throw e;
+            log.warn("지원되지 않는 JWT 토큰입니다.");
+            return false;
         } catch (MalformedJwtException e) {
-            log.error("잘못된 형식의 JWT 토큰입니다.");
-            throw e;
+            log.warn("잘못된 형식의 JWT 토큰입니다.");
+            return false;
         } catch (IllegalArgumentException e) {
-            log.error("JWT 토큰이 비어있습니다.");
-            throw e;
+            log.warn("JWT 토큰이 비어있습니다.");
+            return false;
         } catch (Exception e) {
             log.error("JWT 토큰 검증 중 오류 발생: {}", e.getMessage());
             return false;
         }
+    }
+
+    // 토큰 타입 확인 (access 또는 refresh)
+    public String getTokenType(String token) {
+        try {
+            Claims claims = getClaims(token);
+            return claims.get("type", String.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // Refresh Token 여부 확인
+    public boolean isRefreshToken(String token) {
+        return "refresh".equals(getTokenType(token));
+    }
+
+    // Access Token 여부 확인
+    public boolean isAccessToken(String token) {
+        return "access".equals(getTokenType(token));
     }
 
     // Claims 추출

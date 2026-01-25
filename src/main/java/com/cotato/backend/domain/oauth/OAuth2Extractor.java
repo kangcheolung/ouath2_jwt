@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @RequiredArgsConstructor
+@SuppressWarnings("unchecked")
 public enum OAuth2Extractor {
     // 각 제공자별로 추출 함수를 매핑
     GOOGLE(OAuth2Provider.GOOGLE, OAuth2Extractor::extractGoogleProfile),
@@ -34,6 +35,9 @@ public enum OAuth2Extractor {
 
     private static OAuth2Profile extractNaverProfile(Map<String, Object> attributes) {
         Map<String, Object> response = (Map<String, Object>) attributes.get("response");
+        if (response == null) {
+            throw new IllegalArgumentException("네이버 프로필 정보를 가져올 수 없습니다.");
+        }
         return OAuth2Profile.builder()
                 .name((String) response.get("name"))
                 .email((String) response.get("email"))
@@ -42,7 +46,13 @@ public enum OAuth2Extractor {
 
     private static OAuth2Profile extractKakaoProfile(Map<String, Object> attributes) {
         Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        if (kakaoAccount == null) {
+            throw new IllegalArgumentException("카카오 계정 정보를 가져올 수 없습니다.");
+        }
         Map<String, Object> kakaoProfile = (Map<String, Object>) kakaoAccount.get("profile");
+        if (kakaoProfile == null) {
+            throw new IllegalArgumentException("카카오 프로필 정보를 가져올 수 없습니다.");
+        }
         return OAuth2Profile.builder()
                 .name((String) kakaoProfile.get("nickname"))
                 .email((String) kakaoAccount.get("email"))
