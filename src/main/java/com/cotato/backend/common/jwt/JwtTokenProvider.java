@@ -111,6 +111,18 @@ public class JwtTokenProvider {
         return "access".equals(getTokenType(token));
     }
 
+    // 토큰 만료까지 남은 시간 (밀리초)
+    public long getRemainingExpiration(String token) {
+        try {
+            Claims claims = getClaims(token);
+            Date expiration = claims.getExpiration();
+            long remainingTime = expiration.getTime() - System.currentTimeMillis();
+            return Math.max(remainingTime, 0);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     // Claims 추출
     private Claims getClaims(String token) {
         return Jwts.parser()

@@ -26,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -35,7 +36,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt)) {
-                if (jwtTokenProvider.validateToken(jwt)) {
+                // 블랙리스트 확인 (로그아웃된 토큰인지)
+                if (tokenBlacklistService.isBlacklisted(jwt)) {
+                    log.debug("블랙리스트에 등록된 토큰: {}", request.getRequestURI());
+                } else if (jwtTokenProvider.validateToken(jwt)) {
                     // Access Token인지 확인
                     if (jwtTokenProvider.isAccessToken(jwt)) {
                         Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
