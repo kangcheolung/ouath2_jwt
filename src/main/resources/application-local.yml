@@ -20,16 +20,17 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
   # OAuth2 Redirect URI (로컬)
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            redirect-uri: http://localhost:8080/login/oauth2/code/google
-          naver:
-            redirect-uri: http://localhost:8080/login/oauth2/code/naver
-          kakao:
-            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+  # 프론트엔드 중심 OAuth2 흐름으로 변경됨 - redirect URI는 프론트엔드로 변경 (http://localhost:3000/callback)
+#  security:
+#    oauth2:
+#      client:
+#        registration:
+#          google:
+#            redirect-uri: http://localhost:8080/login/oauth2/code/google
+#          naver:
+#            redirect-uri: http://localhost:8080/login/oauth2/code/naver
+#          kakao:
+#            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
 
 # App 설정 (로컬)
 app:

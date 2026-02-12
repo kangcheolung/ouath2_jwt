@@ -23,6 +23,9 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다.", "JWT-001"),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다.", "JWT-002"),
     UNSUPPORTED_TOKEN(HttpStatus.UNAUTHORIZED, "지원하지 않는 토큰입니다.", "JWT-003"),
+
+    // OAuth 관련 에러
+    OAUTH_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "OAuth 제공자와의 통신에 실패했습니다.", "OAUTH-001"),
     ;
 
     private final HttpStatus httpStatus;

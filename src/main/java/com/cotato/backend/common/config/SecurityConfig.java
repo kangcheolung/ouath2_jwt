@@ -1,7 +1,6 @@
 package com.cotato.backend.common.config;
 
 import com.cotato.backend.common.jwt.JwtAuthenticationFilter;
-import com.cotato.backend.oauth.service.OAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,8 +25,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final OAuthService oAuthService;
-    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -37,12 +34,12 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(authorize -> authorize
                 // 공개 엔드포인트
-                .requestMatchers("/", "/h2-console/**", "/login/**", "/oauth2/**", "/callback.html").permitAll()
+                .requestMatchers("/", "/h2-console/**", "/callback.html").permitAll()
 
                 // Swagger 경로 허용
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
-                // 인증 API
+                // 인증 API (카카오 콜백 포함)
                 .requestMatchers("/api/auth/**").permitAll()
 
                 // 사용자 API (인증 필요)
@@ -58,12 +55,6 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
-            )
-
-            .oauth2Login(oauth2Login -> oauth2Login
-                .successHandler(oAuth2AuthenticationSuccessHandler)
-                .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
-                    .userService(oAuthService))
             )
 
             .sessionManagement(session -> session
