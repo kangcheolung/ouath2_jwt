@@ -1,4 +1,4 @@
-package com.cotato.backend.common.dto;
+package com.cotato.backend.common.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;

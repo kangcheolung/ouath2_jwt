@@ -2,8 +2,8 @@ package com.cotato.backend.oauth.service;
 
 import com.cotato.backend.common.exception.AppException;
 import com.cotato.backend.common.exception.ErrorCode;
-import com.cotato.backend.oauth.dto.KakaoTokenResponse;
-import com.cotato.backend.oauth.dto.KakaoUserInfoResponse;
+import com.cotato.backend.oauth.dto.response.KakaoTokenResponse;
+import com.cotato.backend.oauth.dto.response.KakaoUserInfoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

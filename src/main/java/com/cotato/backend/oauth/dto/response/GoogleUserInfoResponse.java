@@ -1,4 +1,4 @@
-package com.cotato.backend.oauth.dto;
+package com.cotato.backend.oauth.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

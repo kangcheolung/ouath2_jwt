@@ -1,4 +1,4 @@
-package com.cotato.backend.oauth.dto;
+package com.cotato.backend.oauth.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -22,6 +22,7 @@ public class KakaoTokenResponse {
     private String refreshToken;
 
     @JsonProperty("expires_in")
+
     private Long expiresIn;
 
     @JsonProperty("scope")

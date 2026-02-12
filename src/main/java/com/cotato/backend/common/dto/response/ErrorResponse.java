@@ -1,4 +1,4 @@
-package com.cotato.backend.common.dto;
+package com.cotato.backend.common.dto.response;
 
 import com.cotato.backend.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;

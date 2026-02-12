@@ -1,6 +1,6 @@
 package com.cotato.backend.common.exception;
 
-import com.cotato.backend.common.dto.ErrorResponse;
+import com.cotato.backend.common.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

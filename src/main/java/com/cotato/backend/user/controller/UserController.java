@@ -1,8 +1,8 @@
 package com.cotato.backend.user.controller;
 
-import com.cotato.backend.common.dto.DataResponse;
+import com.cotato.backend.common.dto.response.DataResponse;
 import com.cotato.backend.domain.user.entity.User;
-import com.cotato.backend.user.dto.UserInfoResponse;
+import com.cotato.backend.user.dto.response.UserInfoResponse;
 import com.cotato.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

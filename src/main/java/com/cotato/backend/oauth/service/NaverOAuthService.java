@@ -2,8 +2,8 @@ package com.cotato.backend.oauth.service;
 
 import com.cotato.backend.common.exception.AppException;
 import com.cotato.backend.common.exception.ErrorCode;
-import com.cotato.backend.oauth.dto.NaverTokenResponse;
-import com.cotato.backend.oauth.dto.NaverUserInfoResponse;
+import com.cotato.backend.oauth.dto.response.NaverTokenResponse;
+import com.cotato.backend.oauth.dto.response.NaverUserInfoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

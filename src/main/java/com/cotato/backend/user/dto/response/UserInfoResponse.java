@@ -1,4 +1,4 @@
-package com.cotato.backend.user.dto;
+package com.cotato.backend.user.dto.response;
 
 import com.cotato.backend.domain.user.entity.User;
 import lombok.AllArgsConstructor;

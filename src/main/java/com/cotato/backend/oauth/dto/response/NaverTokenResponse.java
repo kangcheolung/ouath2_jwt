@@ -1,4 +1,4 @@
-package com.cotato.backend.oauth.dto;
+package com.cotato.backend.oauth.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GoogleTokenResponse {
+public class NaverTokenResponse {
 
     @JsonProperty("access_token")
     private String accessToken;
@@ -23,7 +23,4 @@ public class GoogleTokenResponse {
 
     @JsonProperty("expires_in")
     private Long expiresIn;
-
-    @JsonProperty("scope")
-    private String scope;
 }

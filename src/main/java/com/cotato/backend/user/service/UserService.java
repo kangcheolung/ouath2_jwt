@@ -4,7 +4,7 @@ import com.cotato.backend.common.exception.EntityNotFoundException;
 import com.cotato.backend.common.exception.ErrorCode;
 import com.cotato.backend.domain.user.entity.User;
 import com.cotato.backend.domain.user.repository.UserRepository;
-import com.cotato.backend.user.dto.UserInfoResponse;
+import com.cotato.backend.user.dto.response.UserInfoResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

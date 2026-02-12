@@ -1,6 +1,6 @@
 package com.cotato.backend.oauth.controller;
 
-import com.cotato.backend.common.dto.DataResponse;
+import com.cotato.backend.common.dto.response.DataResponse;
 import com.cotato.backend.common.exception.AppException;
 import com.cotato.backend.common.exception.ErrorCode;
 import com.cotato.backend.common.jwt.JwtTokenProvider;
@@ -10,11 +10,12 @@ import com.cotato.backend.domain.oauth.OAuth2Profile;
 import com.cotato.backend.domain.oauth.OAuth2Provider;
 import com.cotato.backend.domain.user.entity.User;
 import com.cotato.backend.domain.user.repository.UserRepository;
-import com.cotato.backend.oauth.dto.*;
+import com.cotato.backend.oauth.dto.request.*;
+import com.cotato.backend.oauth.dto.response.*;
 import com.cotato.backend.oauth.service.GoogleOAuthService;
 import com.cotato.backend.oauth.service.KakaoOAuthService;
 import com.cotato.backend.oauth.service.NaverOAuthService;
-import com.cotato.backend.user.dto.UserInfoResponse;
+import com.cotato.backend.user.dto.response.UserInfoResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
