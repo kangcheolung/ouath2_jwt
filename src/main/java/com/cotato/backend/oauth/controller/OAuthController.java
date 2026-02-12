@@ -61,7 +61,6 @@ public class OAuthController {
         KakaoUserInfoResponse kakaoUserInfo = kakaoOAuthService.getUserInfo(kakaoToken.getAccessToken());
 
         // 3. OAuth2Extractor로 프로필 추출
-        // extractKakaoProfile이 attributes.get("kakao_account")를 찾으므로 키를 포함해서 넘겨야 함
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("id", kakaoUserInfo.getId());
         attributes.put("kakao_account", kakaoUserInfo.getKakaoAccount());
@@ -105,7 +104,6 @@ public class OAuthController {
         NaverUserInfoResponse naverUserInfo = naverOAuthService.getUserInfo(naverToken.getAccessToken());
 
         // 3. OAuth2Extractor로 프로필 추출
-        // extractNaverProfile이 attributes.get("response")를 찾으므로 키를 포함해서 넘겨야 함
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("response", naverUserInfo.getResponse());
 
@@ -167,20 +165,6 @@ public class OAuthController {
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
         return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
-    }
-
-    // 인증된 현재 사용자 정보 조회
-    @GetMapping("/me")
-    @Operation(summary = "현재 사용자 정보 조회")
-    @SecurityRequirement(name = "accessTokenAuth")
-    public ResponseEntity<DataResponse<UserInfoResponse>> getCurrentUser(
-        @Parameter(hidden = true) @AuthenticationPrincipal User user) {
-
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
-        UserInfoResponse userInfo = UserInfoResponse.from(user);
-        return ResponseEntity.ok(DataResponse.from(userInfo));
     }
 
     // Token 갱신

@@ -138,7 +138,7 @@
     }
 
     async function testMe() {
-        const res = await fetch(BASE_URL + '/api/auth/me', {
+        const res = await fetch(BASE_URL + '/api/users/me', {
             headers: { 'Authorization': 'Bearer ' + document.getElementById('accessTokenInput').value }
         });
         document.getElementById('apiResult').textContent = JSON.stringify(await res.json(), null, 2);
