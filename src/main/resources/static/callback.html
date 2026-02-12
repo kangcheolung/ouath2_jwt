@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>OAuth2 테스트</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .section { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
+        .btn-kakao { background: #FEE500; color: #000; }
+        .btn-naver { background: #03C75A; color: #fff; }
+        .btn-google { background: #4285F4; color: #fff; }
+        .btn-primary { background: #007bff; color: #fff; }
+        .btn-danger { background: #dc3545; color: #fff; }
+        input { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        pre { background: #222; color: #0f0; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+        .code-box { background: #fff3cd; padding: 12px; border-radius: 6px; border: 1px solid #ffc107; word-break: break-all; font-size: 13px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<h2>🔐 OAuth2 로그인 테스트</h2>
+
+<div class="section">
+    <h3>Step 1. 로그인</h3>
+    <button class="btn btn-kakao" onclick="loginKakao()">카카오 로그인</button>
+    <button class="btn btn-naver" onclick="loginNaver()">네이버 로그인</button>
+    <button class="btn btn-google" onclick="loginGoogle()">구글 로그인</button>
+</div>
+
+<div class="section">
+    <h3>Step 2. 인가코드</h3>
+    <div id="codeDisplay">로그인 후 인가코드가 여기에 표시됩니다.</div>
+</div>
+
+<div class="section hidden" id="tokenSection">
+    <h3>Step 3. JWT 토큰 발급</h3>
+    <button class="btn btn-primary" onclick="getToken()">토큰 발급</button>
+    <pre id="tokenResult"></pre>
+</div>
+
+<div class="section hidden" id="apiSection">
+    <h3>Step 4. API 테스트</h3>
+    <label>Access Token</label>
+    <input type="text" id="accessTokenInput" />
+    <div style="margin-top: 8px;">
+        <button class="btn btn-primary" onclick="testMe()">GET /api/auth/me</button>
+        <button class="btn btn-primary" onclick="testValidate()">GET /api/auth/validate</button>
+        <button class="btn btn-primary" onclick="testRefresh()">POST /api/auth/refresh</button>
+        <button class="btn btn-danger" onclick="testLogout()">POST /api/auth/logout</button>
+    </div>
+    <pre id="apiResult"></pre>
+</div>
+
+<script>
+    const BASE_URL = 'http://localhost:8080';
+    const REDIRECT_URI = BASE_URL + '/callback.html';
+    const KAKAO_CLIENT_ID = '609ef0070fc71037b602365a5e11b2ac';
+    const NAVER_CLIENT_ID = 's1TvmRQkNnWIbh2PK5Ob';
+    const GOOGLE_CLIENT_ID = '973517442206-1grnj5ug9io0udo6ied58h2siqbkjeof.apps.googleusercontent.com';
+
+    let currentProvider = null;
+    let currentCode = null;
+    let currentState = null;
+    let refreshToken = null;
+
+    function loginKakao() {
+        sessionStorage.setItem('provider', 'kakao');
+        location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
+    }
+
+    function loginNaver() {
+        const state = Math.random().toString(36).substring(2);
+        sessionStorage.setItem('provider', 'naver');
+        sessionStorage.setItem('naverState', state);
+        location.href = `https://nid.naver.com/oauth2.0/authorize?client_id=${NAVER_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&state=${state}`;
+    }
+
+    function loginGoogle() {
+        sessionStorage.setItem('provider', 'google');
+        location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=profile email`;
+    }
+
+    window.onload = function () {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const provider = sessionStorage.getItem('provider');
+
+        if (code) {
+            currentCode = code;
+            currentState = state;
+            currentProvider = provider;
+
+            document.getElementById('codeDisplay').innerHTML =
+                `<div class="code-box">
+                    <b>Provider:</b> ${provider}<br>
+                    <b>Code:</b> ${code}
+                    ${state ? '<br><b>State:</b> ' + state : ''}
+                </div>`;
+
+            document.getElementById('tokenSection').classList.remove('hidden');
+        }
+    };
+
+    async function getToken() {
+        let url, body;
+
+        if (currentProvider === 'kakao') {
+            url = BASE_URL + '/api/auth/kakao/callback';
+            body = { code: currentCode, redirectUri: REDIRECT_URI };
+        } else if (currentProvider === 'naver') {
+            url = BASE_URL + '/api/auth/naver/callback';
+            body = { code: currentCode, state: currentState, redirectUri: REDIRECT_URI };
+        } else if (currentProvider === 'google') {
+            url = BASE_URL + '/api/auth/google/callback';
+            body = { code: currentCode, redirectUri: REDIRECT_URI };
+        }
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            document.getElementById('tokenResult').textContent = JSON.stringify(data, null, 2);
+
+            if (data.data?.accessToken) {
+                document.getElementById('accessTokenInput').value = data.data.accessToken;
+                refreshToken = data.data.refreshToken;
+                document.getElementById('apiSection').classList.remove('hidden');
+            }
+        } catch (e) {
+            document.getElementById('tokenResult').textContent = '에러: ' + e.message;
+        }
+    }
+
+    async function testMe() {
+        const res = await fetch(BASE_URL + '/api/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + document.getElementById('accessTokenInput').value }
+        });
+        document.getElementById('apiResult').textContent = JSON.stringify(await res.json(), null, 2);
+    }
+
+    async function testValidate() {
+        const res = await fetch(BASE_URL + '/api/auth/validate', {
+            headers: { 'Authorization': 'Bearer ' + document.getElementById('accessTokenInput').value }
+        });
+        document.getElementById('apiResult').textContent = JSON.stringify(await res.json(), null, 2);
+    }
+
+    async function testRefresh() {
+        const res = await fetch(BASE_URL + '/api/auth/refresh', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + refreshToken }
+        });
+        const data = await res.json();
+        document.getElementById('apiResult').textContent = JSON.stringify(data, null, 2);
+        if (data.data?.accessToken) {
+            document.getElementById('accessTokenInput').value = data.data.accessToken;
+            refreshToken = data.data.refreshToken;
+        }
+    }
+
+    async function testLogout() {
+        const res = await fetch(BASE_URL + '/api/auth/logout', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + document.getElementById('accessTokenInput').value,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ refreshToken: refreshToken })
+        });
+        document.getElementById('apiResult').textContent = JSON.stringify(await res.json(), null, 2);
+    }
+</script>
+</body>
+</html>

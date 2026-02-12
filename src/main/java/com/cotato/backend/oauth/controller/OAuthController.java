@@ -26,6 +26,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/auth")
@@ -57,9 +60,11 @@ public class OAuthController {
         // 2. 카카오 사용자 정보 조회
         KakaoUserInfoResponse kakaoUserInfo = kakaoOAuthService.getUserInfo(kakaoToken.getAccessToken());
 
-        // 3. OAuth2Extractor로 프로필 추출 (id를 attributes에 포함)
-        java.util.Map<String, Object> attributes = new java.util.HashMap<>(kakaoUserInfo.getKakaoAccount());
+        // 3. OAuth2Extractor로 프로필 추출
+        // extractKakaoProfile이 attributes.get("kakao_account")를 찾으므로 키를 포함해서 넘겨야 함
+        Map<String, Object> attributes = new HashMap<>();
         attributes.put("id", kakaoUserInfo.getId());
+        attributes.put("kakao_account", kakaoUserInfo.getKakaoAccount());
 
         OAuth2Profile profile = OAuth2Extractor.extract(OAuth2Provider.KAKAO, attributes);
         profile.setProvider(OAuth2Provider.KAKAO.getRegistrationId());
@@ -77,8 +82,7 @@ public class OAuthController {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-        TokenResponse tokenResponse = TokenResponse.of(accessToken, refreshToken);
-        return ResponseEntity.ok(DataResponse.from(tokenResponse));
+        return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
     }
 
     // 네이버 로그인 콜백
@@ -101,7 +105,11 @@ public class OAuthController {
         NaverUserInfoResponse naverUserInfo = naverOAuthService.getUserInfo(naverToken.getAccessToken());
 
         // 3. OAuth2Extractor로 프로필 추출
-        OAuth2Profile profile = OAuth2Extractor.extract(OAuth2Provider.NAVER, naverUserInfo.getResponse());
+        // extractNaverProfile이 attributes.get("response")를 찾으므로 키를 포함해서 넘겨야 함
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("response", naverUserInfo.getResponse());
+
+        OAuth2Profile profile = OAuth2Extractor.extract(OAuth2Provider.NAVER, attributes);
         profile.setProvider(OAuth2Provider.NAVER.getRegistrationId());
 
         // 4. 사용자 조회 또는 생성
@@ -117,8 +125,7 @@ public class OAuthController {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-        TokenResponse tokenResponse = TokenResponse.of(accessToken, refreshToken);
-        return ResponseEntity.ok(DataResponse.from(tokenResponse));
+        return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
     }
 
     // 구글 로그인 콜백
@@ -139,7 +146,7 @@ public class OAuthController {
         GoogleUserInfoResponse googleUserInfo = googleOAuthService.getUserInfo(googleToken.getAccessToken());
 
         // 3. OAuth2Extractor로 프로필 추출
-        java.util.Map<String, Object> attributes = new java.util.HashMap<>();
+        Map<String, Object> attributes = new HashMap<>();
         attributes.put("name", googleUserInfo.getName());
         attributes.put("email", googleUserInfo.getEmail());
 
@@ -159,8 +166,7 @@ public class OAuthController {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-        TokenResponse tokenResponse = TokenResponse.of(accessToken, refreshToken);
-        return ResponseEntity.ok(DataResponse.from(tokenResponse));
+        return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
     }
 
     // 인증된 현재 사용자 정보 조회
@@ -185,19 +191,16 @@ public class OAuthController {
 
         String token = refreshToken.replace("Bearer ", "");
 
-        // 블랙리스트 확인 (로그아웃된 토큰인지)
         if (tokenBlacklistService.isBlacklisted(token)) {
             log.warn("블랙리스트에 등록된 Refresh Token으로 갱신 시도");
             return ResponseEntity.status(401).build();
         }
 
-        // 토큰 유효성 검증
         if (!jwtTokenProvider.validateToken(token)) {
             log.warn("유효하지 않은 Refresh Token으로 갱신 시도");
             return ResponseEntity.status(401).build();
         }
 
-        // Refresh Token 타입인지 확인
         if (!jwtTokenProvider.isRefreshToken(token)) {
             log.warn("Refresh Token이 아닌 토큰으로 갱신 시도");
             return ResponseEntity.status(401).build();
@@ -210,8 +213,7 @@ public class OAuthController {
         String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-        TokenResponse tokenResponse = TokenResponse.of(newAccessToken, newRefreshToken);
-        return ResponseEntity.ok(DataResponse.from(tokenResponse));
+        return ResponseEntity.ok(DataResponse.from(TokenResponse.of(newAccessToken, newRefreshToken)));
     }
 
     // Token 검증
@@ -246,13 +248,11 @@ public class OAuthController {
         String access = accessToken.replace("Bearer ", "");
         String refresh = logoutRequest.getRefreshToken();
 
-        // Access Token 블랙리스트 등록
         if (jwtTokenProvider.validateToken(access)) {
             long accessExpiration = jwtTokenProvider.getRemainingExpiration(access);
             tokenBlacklistService.addToBlacklist(access, accessExpiration);
         }
 
-        // Refresh Token 블랙리스트 등록
         if (refresh != null && jwtTokenProvider.validateToken(refresh)) {
             long refreshExpiration = jwtTokenProvider.getRemainingExpiration(refresh);
             tokenBlacklistService.addToBlacklist(refresh, refreshExpiration);

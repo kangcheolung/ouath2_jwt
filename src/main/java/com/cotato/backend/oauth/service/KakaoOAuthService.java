@@ -13,6 +13,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,9 +31,6 @@ public class KakaoOAuthService {
     private static final String KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
     private static final String KAKAO_USER_INFO_URL = "https://kapi.kakao.com/v2/user/me";
 
-    /**
-     * 인가코드로 카카오 액세스 토큰 요청
-     */
     public KakaoTokenResponse getAccessToken(String code, String redirectUri) {
         log.info("카카오 액세스 토큰 요청 시작 - code: {}, redirectUri: {}", code, redirectUri);
 
@@ -57,19 +56,14 @@ public class KakaoOAuthService {
                 request,
                 KakaoTokenResponse.class
             );
-
             log.info("카카오 액세스 토큰 발급 성공");
             return response.getBody();
-
         } catch (Exception e) {
             log.error("카카오 액세스 토큰 요청 실패", e);
             throw new AppException(ErrorCode.OAUTH_PROVIDER_ERROR);
         }
     }
 
-    /**
-     * 카카오 액세스 토큰으로 사용자 정보 조회
-     */
     public KakaoUserInfoResponse getUserInfo(String accessToken) {
         log.info("카카오 사용자 정보 조회 시작");
 
@@ -80,16 +74,23 @@ public class KakaoOAuthService {
         HttpEntity<String> request = new HttpEntity<>(headers);
 
         try {
+            // 실제 응답 확인용 로그
+            ResponseEntity<Map> rawResponse = restTemplate.exchange(
+                KAKAO_USER_INFO_URL,
+                HttpMethod.GET,
+                request,
+                Map.class
+            );
+            log.info("카카오 실제 응답: {}", rawResponse.getBody());
+
             ResponseEntity<KakaoUserInfoResponse> response = restTemplate.exchange(
                 KAKAO_USER_INFO_URL,
                 HttpMethod.GET,
                 request,
                 KakaoUserInfoResponse.class
             );
-
             log.info("카카오 사용자 정보 조회 성공");
             return response.getBody();
-
         } catch (Exception e) {
             log.error("카카오 사용자 정보 조회 실패", e);
             throw new AppException(ErrorCode.OAUTH_PROVIDER_ERROR);

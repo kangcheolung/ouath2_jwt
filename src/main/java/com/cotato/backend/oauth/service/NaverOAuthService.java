@@ -13,6 +13,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,9 +31,6 @@ public class NaverOAuthService {
     private static final String NAVER_TOKEN_URL = "https://nid.naver.com/oauth2.0/token";
     private static final String NAVER_USER_INFO_URL = "https://openapi.naver.com/v1/nid/me";
 
-    /**
-     * 인가코드로 네이버 액세스 토큰 요청
-     */
     public NaverTokenResponse getAccessToken(String code, String state, String redirectUri) {
         log.info("네이버 액세스 토큰 요청 시작 - code: {}, state: {}, redirectUri: {}", code, state, redirectUri);
 
@@ -54,19 +53,14 @@ public class NaverOAuthService {
                 request,
                 NaverTokenResponse.class
             );
-
             log.info("네이버 액세스 토큰 발급 성공");
             return response.getBody();
-
         } catch (Exception e) {
             log.error("네이버 액세스 토큰 요청 실패", e);
             throw new AppException(ErrorCode.OAUTH_PROVIDER_ERROR);
         }
     }
 
-    /**
-     * 네이버 액세스 토큰으로 사용자 정보 조회
-     */
     public NaverUserInfoResponse getUserInfo(String accessToken) {
         log.info("네이버 사용자 정보 조회 시작");
 
@@ -76,16 +70,23 @@ public class NaverOAuthService {
         HttpEntity<String> request = new HttpEntity<>(headers);
 
         try {
+            // 실제 응답 확인용 로그
+            ResponseEntity<Map> rawResponse = restTemplate.exchange(
+                NAVER_USER_INFO_URL,
+                HttpMethod.GET,
+                request,
+                Map.class
+            );
+            log.info("네이버 실제 응답: {}", rawResponse.getBody());
+
             ResponseEntity<NaverUserInfoResponse> response = restTemplate.exchange(
                 NAVER_USER_INFO_URL,
                 HttpMethod.GET,
                 request,
                 NaverUserInfoResponse.class
             );
-
             log.info("네이버 사용자 정보 조회 성공");
             return response.getBody();
-
         } catch (Exception e) {
             log.error("네이버 사용자 정보 조회 실패", e);
             throw new AppException(ErrorCode.OAUTH_PROVIDER_ERROR);
