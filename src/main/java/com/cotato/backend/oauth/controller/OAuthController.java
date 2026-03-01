@@ -16,15 +16,13 @@ import com.cotato.backend.oauth.dto.response.*;
 import com.cotato.backend.oauth.service.GoogleOAuthService;
 import com.cotato.backend.oauth.service.KakaoOAuthService;
 import com.cotato.backend.oauth.service.NaverOAuthService;
-import com.cotato.backend.user.dto.response.UserInfoResponse;
+import com.cotato.backend.oauth.service.OAuthService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -41,6 +39,7 @@ public class OAuthController {
     private final UserRepository userRepository;
     private final TokenBlacklistService tokenBlacklistService;
     private final RefreshTokenService refreshTokenService;
+    private final OAuthService oAuthService;
     private final KakaoOAuthService kakaoOAuthService;
     private final NaverOAuthService naverOAuthService;
     private final GoogleOAuthService googleOAuthService;
@@ -70,23 +69,8 @@ public class OAuthController {
         OAuth2Profile profile = OAuth2Extractor.extract(OAuth2Provider.KAKAO, attributes);
         profile.setProvider(OAuth2Provider.KAKAO.getRegistrationId());
 
-        // 4. 사용자 조회 또는 생성
-        User user = userRepository.findByEmailAndProvider(profile.getEmail(), profile.getProvider())
-            .orElseGet(() -> {
-                User newUser = profile.toUser();
-                return userRepository.save(newUser);
-            });
-
-        log.info("사용자 로그인 성공 - userId: {}, email: {}", user.getId(), user.getEmail());
-
-        // 5. JWT 발급
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        // 6. Refresh Token Redis 저장 (화이트리스트)
-        refreshTokenService.save(user.getId(), refreshToken);
-
-        return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
+        // 4. 유저 조회/생성 + JWT 발급 + Redis 저장
+        return ResponseEntity.ok(DataResponse.from(oAuthService.processLogin(profile)));
     }
 
     // 네이버 로그인 콜백
@@ -115,23 +99,8 @@ public class OAuthController {
         OAuth2Profile profile = OAuth2Extractor.extract(OAuth2Provider.NAVER, attributes);
         profile.setProvider(OAuth2Provider.NAVER.getRegistrationId());
 
-        // 4. 사용자 조회 또는 생성
-        User user = userRepository.findByEmailAndProvider(profile.getEmail(), profile.getProvider())
-            .orElseGet(() -> {
-                User newUser = profile.toUser();
-                return userRepository.save(newUser);
-            });
-
-        log.info("사용자 로그인 성공 - userId: {}, email: {}", user.getId(), user.getEmail());
-
-        // 5. JWT 발급
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        // 6. Refresh Token Redis 저장 (화이트리스트)
-        refreshTokenService.save(user.getId(), refreshToken);
-
-        return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
+        // 4. 유저 조회/생성 + JWT 발급 + Redis 저장
+        return ResponseEntity.ok(DataResponse.from(oAuthService.processLogin(profile)));
     }
 
     // 구글 로그인 콜백
@@ -159,23 +128,8 @@ public class OAuthController {
         OAuth2Profile profile = OAuth2Extractor.extract(OAuth2Provider.GOOGLE, attributes);
         profile.setProvider(OAuth2Provider.GOOGLE.getRegistrationId());
 
-        // 4. 사용자 조회 또는 생성
-        User user = userRepository.findByEmailAndProvider(profile.getEmail(), profile.getProvider())
-            .orElseGet(() -> {
-                User newUser = profile.toUser();
-                return userRepository.save(newUser);
-            });
-
-        log.info("사용자 로그인 성공 - userId: {}, email: {}", user.getId(), user.getEmail());
-
-        // 5. JWT 발급
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        // 6. Refresh Token Redis 저장 (화이트리스트)
-        refreshTokenService.save(user.getId(), refreshToken);
-
-        return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
+        // 4. 유저 조회/생성 + JWT 발급 + Redis 저장
+        return ResponseEntity.ok(DataResponse.from(oAuthService.processLogin(profile)));
     }
 
     // Token 갱신

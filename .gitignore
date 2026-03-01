@@ -36,3 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 .env
+
+### Test files with hardcoded credentials ###
+src/main/resources/static/callback.html

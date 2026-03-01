@@ -4,23 +4,19 @@ import com.cotato.backend.common.exception.AppException;
 import com.cotato.backend.common.exception.ErrorCode;
 import com.cotato.backend.oauth.dto.response.KakaoTokenResponse;
 import com.cotato.backend.oauth.dto.response.KakaoUserInfoResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
+import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class KakaoOAuthService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestClient restClient = RestClient.create();
 
     @Value("${KAKAO_CLIENT_ID}")
     private String clientId;
@@ -34,9 +30,6 @@ public class KakaoOAuthService {
     public KakaoTokenResponse getAccessToken(String code, String redirectUri) {
         log.info("카카오 액세스 토큰 요청 시작 - code: {}, redirectUri: {}", code, redirectUri);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("client_id", clientId);
@@ -47,17 +40,16 @@ public class KakaoOAuthService {
             params.add("client_secret", clientSecret);
         }
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-
         try {
-            ResponseEntity<KakaoTokenResponse> response = restTemplate.exchange(
-                KAKAO_TOKEN_URL,
-                HttpMethod.POST,
-                request,
-                KakaoTokenResponse.class
-            );
+            KakaoTokenResponse response = restClient.post()
+                .uri(KAKAO_TOKEN_URL)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(params)
+                .retrieve()
+                .body(KakaoTokenResponse.class);
+
             log.info("카카오 액세스 토큰 발급 성공");
-            return response.getBody();
+            return response;
         } catch (Exception e) {
             log.error("카카오 액세스 토큰 요청 실패", e);
             throw new AppException(ErrorCode.OAUTH_PROVIDER_ERROR);
@@ -67,30 +59,15 @@ public class KakaoOAuthService {
     public KakaoUserInfoResponse getUserInfo(String accessToken) {
         log.info("카카오 사용자 정보 조회 시작");
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        HttpEntity<String> request = new HttpEntity<>(headers);
-
         try {
-            // 실제 응답 확인용 로그
-            ResponseEntity<Map> rawResponse = restTemplate.exchange(
-                KAKAO_USER_INFO_URL,
-                HttpMethod.GET,
-                request,
-                Map.class
-            );
-            log.info("카카오 실제 응답: {}", rawResponse.getBody());
+            KakaoUserInfoResponse response = restClient.get()
+                .uri(KAKAO_USER_INFO_URL)
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(KakaoUserInfoResponse.class);
 
-            ResponseEntity<KakaoUserInfoResponse> response = restTemplate.exchange(
-                KAKAO_USER_INFO_URL,
-                HttpMethod.GET,
-                request,
-                KakaoUserInfoResponse.class
-            );
             log.info("카카오 사용자 정보 조회 성공");
-            return response.getBody();
+            return response;
         } catch (Exception e) {
             log.error("카카오 사용자 정보 조회 실패", e);
             throw new AppException(ErrorCode.OAUTH_PROVIDER_ERROR);
