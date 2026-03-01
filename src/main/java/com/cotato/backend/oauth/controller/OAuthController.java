@@ -4,6 +4,7 @@ import com.cotato.backend.common.dto.response.DataResponse;
 import com.cotato.backend.common.exception.AppException;
 import com.cotato.backend.common.exception.ErrorCode;
 import com.cotato.backend.common.jwt.JwtTokenProvider;
+import com.cotato.backend.common.jwt.RefreshTokenService;
 import com.cotato.backend.common.jwt.TokenBlacklistService;
 import com.cotato.backend.domain.oauth.OAuth2Extractor;
 import com.cotato.backend.domain.oauth.OAuth2Profile;
@@ -39,6 +40,7 @@ public class OAuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final TokenBlacklistService tokenBlacklistService;
+    private final RefreshTokenService refreshTokenService;
     private final KakaoOAuthService kakaoOAuthService;
     private final NaverOAuthService naverOAuthService;
     private final GoogleOAuthService googleOAuthService;
@@ -80,6 +82,9 @@ public class OAuthController {
         // 5. JWT 발급
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+
+        // 6. Refresh Token Redis 저장 (화이트리스트)
+        refreshTokenService.save(user.getId(), refreshToken);
 
         return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
     }
@@ -123,6 +128,9 @@ public class OAuthController {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
+        // 6. Refresh Token Redis 저장 (화이트리스트)
+        refreshTokenService.save(user.getId(), refreshToken);
+
         return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
     }
 
@@ -164,6 +172,9 @@ public class OAuthController {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
+        // 6. Refresh Token Redis 저장 (화이트리스트)
+        refreshTokenService.save(user.getId(), refreshToken);
+
         return ResponseEntity.ok(DataResponse.from(TokenResponse.of(accessToken, refreshToken)));
     }
 
@@ -174,11 +185,6 @@ public class OAuthController {
         @RequestHeader("Authorization") String refreshToken) {
 
         String token = refreshToken.replace("Bearer ", "");
-
-        if (tokenBlacklistService.isBlacklisted(token)) {
-            log.warn("블랙리스트에 등록된 Refresh Token으로 갱신 시도");
-            return ResponseEntity.status(401).build();
-        }
 
         if (!jwtTokenProvider.validateToken(token)) {
             log.warn("유효하지 않은 Refresh Token으로 갱신 시도");
@@ -191,12 +197,23 @@ public class OAuthController {
         }
 
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
+
+        // 화이트리스트 검증: Redis에 저장된 토큰과 일치해야 유효
+        if (!refreshTokenService.validate(userId, token)) {
+            log.warn("Redis에 저장된 Refresh Token과 불일치 - 탈취 또는 이미 사용된 토큰, userId: {}", userId);
+            return ResponseEntity.status(401).build();
+        }
+
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
+        // 새 Refresh Token으로 교체 (토큰 로테이션)
+        refreshTokenService.save(user.getId(), newRefreshToken);
+
+        log.info("토큰 갱신 완료 - userId: {}", userId);
         return ResponseEntity.ok(DataResponse.from(TokenResponse.of(newAccessToken, newRefreshToken)));
     }
 
@@ -223,7 +240,7 @@ public class OAuthController {
 
     // 로그아웃
     @PostMapping("/logout")
-    @Operation(summary = "로그아웃", description = "Access Token과 Refresh Token을 블랙리스트에 등록하여 무효화합니다.")
+    @Operation(summary = "로그아웃", description = "Access Token을 블랙리스트에 등록하고, Refresh Token을 Redis에서 삭제합니다.")
     @SecurityRequirement(name = "accessTokenAuth")
     public ResponseEntity<DataResponse<String>> logout(
         @RequestHeader("Authorization") String accessToken,
@@ -232,14 +249,16 @@ public class OAuthController {
         String access = accessToken.replace("Bearer ", "");
         String refresh = logoutRequest.getRefreshToken();
 
+        // Access Token 블랙리스트 등록 (만료 전까지 재사용 차단)
         if (jwtTokenProvider.validateToken(access)) {
             long accessExpiration = jwtTokenProvider.getRemainingExpiration(access);
             tokenBlacklistService.addToBlacklist(access, accessExpiration);
         }
 
+        // Refresh Token 화이트리스트에서 삭제 (즉시 갱신 불가 처리)
         if (refresh != null && jwtTokenProvider.validateToken(refresh)) {
-            long refreshExpiration = jwtTokenProvider.getRemainingExpiration(refresh);
-            tokenBlacklistService.addToBlacklist(refresh, refreshExpiration);
+            Long userId = jwtTokenProvider.getUserIdFromToken(refresh);
+            refreshTokenService.delete(userId);
         }
 
         log.info("로그아웃 처리 완료");
