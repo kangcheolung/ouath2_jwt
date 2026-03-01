@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
-            String jwt = getJwtFromRequest(request);
+            String jwt = getJwtFromRequest(request); // Request Header에서 JWT 토큰 추출
 
             if (StringUtils.hasText(jwt)) {
                 // 블랙리스트 확인 (로그아웃된 토큰인지)

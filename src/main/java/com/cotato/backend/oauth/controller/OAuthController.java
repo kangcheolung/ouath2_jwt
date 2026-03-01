@@ -54,8 +54,8 @@ public class OAuthController {
 
         // 1. 카카오에 액세스 토큰 요청
         KakaoTokenResponse kakaoToken = kakaoOAuthService.getAccessToken(
-            request.getCode(),
-            request.getRedirectUri()
+            request.getCode(), // 프론트에서 받은 인가코드
+            request.getRedirectUri() // 프론트에서 받은 리다이렉트 URI (카카오 개발자센터에 등록된 URI와 일치해야 함)
         );
 
         // 2. 카카오 사용자 정보 조회
